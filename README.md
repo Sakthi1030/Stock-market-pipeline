@@ -1,172 +1,119 @@
-# EV Scooter Scraper
+# Stock Market Pipeline
 
-This project scrapes electric scooter listings from BikeDekho and saves the results to a CSV file.
+![Snowflake](https://img.shields.io/badge/Snowflake-29B5E8?logo=snowflake&logoColor=white)
+![DBT](https://img.shields.io/badge/dbt-FF694B?logo=dbt&logoColor=white)
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?logo=apacheairflow&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+![Kafka](https://img.shields.io/badge/Apache%20Kafka-231F20?logo=apachekafka&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?logo=powerbi&logoColor=black)
 
-The goal of the project is to collect structured EV scooter data such as price, speed, range, rating, reviews, EMI, and extra listing details in an automated way.
+## Project Overview
 
-## Why This Project
+This repository contains an end-to-end real-time stock market data pipeline built with a modern data stack. The flow captures live stock data from an external API, streams it through Kafka, lands it for ingestion, orchestrates loading with Airflow, transforms it in Snowflake with dbt, and prepares it for analytics and dashboarding.
 
-This scraper was built to turn semi-structured website listings into a reusable dataset for:
-
-- market research
-- price comparison
-- EV product analysis
-- portfolio and resume demonstration
-- future data pipelines or dashboards
+![Architecture](https://github.com/user-attachments/assets/6b49eb4d-4bf7-473d-9281-50c20b241760)
 
 ## Tech Stack
 
-The project uses a hybrid approach:
+- Snowflake for warehousing
+- dbt for SQL transformations
+- Apache Airflow for orchestration
+- Apache Kafka for streaming
+- Python for ingestion scripts
+- Docker for local services
+- Power BI for analytics
 
-- `crawl4ai` for page loading, crawling, and rendered page retrieval
-- `BeautifulSoup` for deterministic HTML parsing
-- optional `DeepSeek` integration through `crawl4ai` for schema-based LLM extraction
-- `pydantic` for the output data model
-- `csv` for exporting results
+## Key Features
 
-## Why Use `crawl4ai`
+- Live stock market data ingestion from an API
+- Real-time event streaming with Kafka
+- Automated orchestration using Airflow
+- Bronze, silver, and gold data modeling with dbt
+- Snowflake-ready analytical outputs
+- Power BI reporting support
 
-Using only `BeautifulSoup` works well when the HTML is already available and stable, but `crawl4ai` adds advantages:
+## Repository Structure
 
-- it handles browser-style crawling more cleanly for pages that may be dynamic
-- it gives a consistent crawling layer for pagination and rendered content
-- it allows the same project to support both rule-based extraction and LLM-based extraction
-- it makes the scraper easier to extend later for more complex pages
+```text
+stock-market-pipeline/
+|-- producer/                     # Kafka producer
+|   `-- producer.py
+|-- consumer/                     # Kafka consumer
+|   `-- consumer.py
+|-- dbt_stocks/models/
+|   |-- bronze/
+|   |   |-- bronze_stg_stock_quotes.sql
+|   |   `-- sources.yml
+|   |-- silver/
+|   |   `-- silver_clean_stock_quotes.sql
+|   `-- gold/
+|       |-- gold_candlestick.sql
+|       |-- gold_kpi.sql
+|       `-- gold_treechart.sql
+|-- dag/
+|   `-- minio_to_snowflake.py
+|-- docker-compose.yml
+|-- airflow_initial.txt
+|-- requirements.txt
+`-- README.md
+```
 
-In this project, `crawl4ai` is used as the main crawling engine, while `BeautifulSoup` handles the reliable extraction logic.
+## Getting Started
 
-## Why Add `DeepSeek`
+1. Clone the repository.
+2. Configure the required environment variables and service credentials.
+3. Start the local services with Docker.
+4. Run the producer to publish stock events.
+5. Run the consumer and Airflow pipeline.
+6. Build transformations in dbt and connect your reporting layer.
 
-`DeepSeek` is integrated as an optional extraction backend through `crawl4ai`.
+## Pipeline Flow
 
-Its advantage is that it can help when:
+1. The producer fetches live stock data from the Finnhub API.
+2. Kafka carries the streaming events.
+3. The consumer persists the events for downstream ingestion.
+4. Airflow moves the data into Snowflake staging tables.
+5. dbt builds bronze, silver, and gold models.
+6. Power BI reads analytics-ready outputs for dashboards.
 
-- page structures are messy or inconsistent
-- fixed selectors become hard to maintain
-- you want schema-based extraction with less manual parsing
-- you want to quickly prototype extraction for new websites
+## Main Components
 
-For this BikeDekho page, the CSS/HTML parsing path is still the default because it is faster, cheaper, and more stable for the current listing structure. But `DeepSeek` is integrated so the project can support an LLM extraction workflow too.
+### Producer
 
-## Why Not Use Only `BeautifulSoup`
+`producer/producer.py` fetches live stock prices and publishes them into Kafka as JSON events.
 
-Using only `BeautifulSoup` is simple and efficient, but it has limits:
+### Consumer
 
-- it depends fully on stable HTML structure
-- it can struggle when pages are rendered dynamically
-- it does not provide an easy built-in path for schema-based LLM extraction
+`consumer/consumer.py` consumes Kafka messages and stores them in the landing layer for further processing.
 
-That is why this project uses `crawl4ai + BeautifulSoup` together:
+### Airflow
 
-- `crawl4ai` handles the crawling layer
-- `BeautifulSoup` handles precise extraction
-- `DeepSeek` remains available as an optional intelligent extraction layer
+`dag/minio_to_snowflake.py` orchestrates ingestion into Snowflake on a schedule.
 
-## What It Collects
+### dbt
 
-The scraper collects:
+The `dbt_stocks/models` directory contains:
 
-- scooter name
-- top speed
-- range
-- rating
-- review count
-- price
-- EMI text
-- extra spec details shown in the listing card
-
-## How It Works
-
-The current flow is:
-
-1. Start the crawler with `crawl4ai`
-2. Load BikeDekho electric scooter listing pages using `?pageno=...`
-3. Parse the cleaned HTML with `BeautifulSoup`
-4. Extract each scooter card into a structured format
-5. Remove duplicates across pages
-6. Save the final records to `ev_scooters.csv`
-
-The scraper currently extracts around 295 listings from the live site.
-
-## Extraction Modes
-
-The project supports two extraction modes:
-
-1. `css`
-   This is the default and recommended mode. It uses `crawl4ai` for crawling and `BeautifulSoup` for parsing.
-2. `deepseek`
-   This uses `crawl4ai` with an LLM extraction strategy powered by `DeepSeek`.
-
-For the current website, `css` mode gives the most reliable output.
-
-## Project Structure
-
-- `main.py`: entrypoint and crawl loop
-- `config.py`: base URL, extraction mode, and runtime settings
-- `utils/scraper_utils.py`: Crawl4AI page loading, BeautifulSoup parsing, and optional DeepSeek extraction
-- `utils/data_utils.py`: CSV writing helpers
-- `models/ev_scooter.py`: data model for output fields
-- `ev_scooters.csv`: latest scraped output
+- bronze models for staged raw data
+- silver models for cleaned and validated records
+- gold models for analytics outputs such as KPI, candlestick, and tree map views
 
 ## Requirements
 
-Install the dependencies:
+Install Python dependencies with:
 
 ```bash
-pip install crawl4ai beautifulsoup4 lxml python-dotenv pydantic requests
+pip install -r requirements.txt
 ```
 
-## Run
+Start the local services with:
 
 ```bash
-python main.py
+docker compose up -d
 ```
-
-After the run completes, the scraped data will be written to:
-
-```bash
-ev_scooters.csv
-```
-
-## Optional DeepSeek Mode
-
-If you want to enable LLM-based extraction through `crawl4ai`, add this to your `.env`:
-
-```env
-DEEPSEEK_API_KEY=your_key_here
-```
-
-Then switch the extraction mode in `config.py`:
-
-```python
-EXTRACTION_MODE = "deepseek"
-```
-
-For the current BikeDekho listing page, the default `css` mode is the recommended option because it gives the same result shape without depending on an external model.
-
-## Output Columns
-
-The CSV contains:
-
-- `name`
-- `speed`
-- `range`
-- `rating`
-- `reviews`
-- `price`
-- `emi`
-- `extra_details`
-
-## Interview Summary
-
-You can describe this project like this:
-
-"I built an EV scooter web scraper for BikeDekho that collects structured listing data and exports it to CSV. I used `crawl4ai` as the crawling layer, `BeautifulSoup` for reliable HTML parsing, and also integrated optional `DeepSeek`-based schema extraction for flexibility. One important challenge was understanding the actual pagination and adapting the scraper to `pageno`-based navigation. I also designed it in a hybrid way so rule-based parsing gives stable production output, while LLM extraction is available for future extensibility."
 
 ## Notes
 
-- The scraper no longer depends on Groq.
-- `crawl4ai` is part of the active crawl flow.
-- `DeepSeek` is integrated as an optional extraction backend.
-- The site pagination uses `pageno`, not `page`.
-- Because the site can change over time, selectors may need to be updated later if BikeDekho changes its listing layout.
+- This repository was imported from an existing stock pipeline project and adapted for your repo setup.
+- The original contributor attribution and MIT license file were intentionally removed per your request.

@@ -1,5 +1,5 @@
-.env
-.crawl4ai/
 __pycache__/
-*/__pycache__/
 *.pyc
+.env
+temp_source_repo/
+.crawl4ai/
