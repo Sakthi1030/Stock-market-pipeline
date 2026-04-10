@@ -76,11 +76,6 @@ stock-market-pipeline/
 4. Airflow moves the data into Snowflake staging tables.
 5. dbt builds bronze, silver, and gold models.
 6. Power BI reads analytics-ready outputs for dashboards.
-<img width="1837" height="904" alt="image" src="https://github.com/user-attachments/assets/58dfabbf-68d7-4015-83c0-807f187d026e" />
-The table not showing up at this moment due to free trail ended
-
-
-<img width="1907" height="875" alt="Screenshot 2026-04-06 194310" src="https://github.com/user-attachments/assets/451e3501-dc4b-4d69-966e-0803cd526682" />
 
 
 ## Main Components
