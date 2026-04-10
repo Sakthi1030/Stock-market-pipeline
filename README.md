@@ -59,15 +59,6 @@ stock-market-pipeline/
 `-- README.md
 ```
 
-## Getting Started
-
-1. Clone the repository.
-2. Configure the required environment variables and service credentials.
-3. Start the local services with Docker.
-4. Run the producer to publish stock events.
-5. Run the consumer and Airflow pipeline.
-6. Build transformations in dbt and connect your reporting layer.
-
 ## Pipeline Flow
 
 1. The producer fetches live stock data from the Finnhub API.
