@@ -12,7 +12,6 @@
 
 This repository contains an end-to-end real-time stock market data pipeline built with a modern data stack. The flow captures live stock data from an external API, streams it through Kafka, lands it for ingestion, orchestrates loading with Airflow, transforms it in Snowflake with dbt, and prepares it for analytics and dashboarding.
 
-![Architecture](https://github.com/user-attachments/assets/6b49eb4d-4bf7-473d-9281-50c20b241760)
 
 ## Tech Stack
 
